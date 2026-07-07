@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>내 여름 피부, 무슨 타입? | 올리브영 알바 출신이 만든 피부 진단</title>
+<meta name="description" content="고민만 고르면 기초템 알아서 척척! 올리브영 매장에서 내 여름 피부 타입을 진단받아보세요." />
+<meta property="og:title" content="내 여름 피부, 무슨 타입?" />
+<meta property="og:description" content="고민만 고르면 기초템 알아서 척척! 1분 피부 타입 진단" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="app-wrap">
+
+  <!-- 진행률: 항상 표시 (레이아웃 점프 방지) -->
+  <div class="progress" id="progress" role="progressbar" aria-label="진행률">
+    <div class="stud-track" id="stud-track"></div>
+    <span class="progress-label" id="progress-label"></span>
+  </div>
+
+  <!-- 매장 사진(고정 헤더) + 대화창(그 아래 이어붙임) : 인트로~결과 전체 공통 -->
+  <div class="game-card" id="game-card">
+    <div class="photo-img-wrap">
+      <img src="assets/store-scene.png" alt="올리브영 매장 피부 진단 코너" class="photo-img" />
+    </div>
+    <div class="dialog-box" id="dialog-box">
+      <div id="panel-content"></div>
+      <div class="nav-btns">
+        <button class="brick-btn btn-ghost" id="btn-prev">← 이전</button>
+        <button class="brick-btn btn-next" id="btn-next">다음 →</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast" role="status">링크가 복사되었어요!</div>
+
+<script src="js/questions.js"></script>
+<script src="js/calculator.js"></script>
+<script src="js/results.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

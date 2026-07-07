@@ -1,0 +1,229 @@
+/* ============ 토큰 ============ */
+:root{
+  --olive:#7CA82C; --deep:#22441E; --lime:#C6FF3E; --mint:#B2F0E4;
+  --sky:#8CD8FF; --cream:#FCF9F0; --navy:#2B3450; --yellow:#FFCD46;
+  --ink:#14180C; --pink:#FF9BC8; --radius:16px;
+  --shadow-hard:4px 4px 0 var(--ink);
+  --font-display:'Black Han Sans',sans-serif;
+  --font-body:'Noto Sans KR',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{font-size:16px}
+body{
+  font-family:var(--font-body);color:var(--deep);
+  background:linear-gradient(160deg,var(--lime) 0%,#DFF7A8 45%,var(--mint) 100%);
+  min-height:100vh;background-attachment:fixed;
+}
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;
+  background-image:radial-gradient(rgba(34,68,30,.10) 2px,transparent 2px);
+  background-size:26px 26px;z-index:0;
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+.app-wrap{
+  position:relative;z-index:1;min-height:100vh;
+  padding:24px 16px 40px;display:flex;flex-direction:column;align-items:center;
+}
+.app-wrap>*{width:100%;max-width:480px}
+
+/* ============ 타이포 ============ */
+.intro-title{
+  font-family:var(--font-display);font-weight:400;
+  font-size:clamp(1.6rem,7vw,2.1rem);line-height:1.5;color:var(--deep);
+  margin:4px 0 8px;letter-spacing:.5px;
+}
+.intro-title .hl{
+  background:var(--lime);padding:2px 10px 4px;border-radius:8px;
+  box-shadow:2px 2px 0 var(--ink);display:inline-block;
+}
+.intro-subtitle{font-weight:700;font-size:.98rem;margin-bottom:4px;color:var(--olive)}
+
+/* ============ 브릭 버튼 ============ */
+.brick-btn{
+  position:relative;font-family:var(--font-body);font-weight:900;
+  font-size:1.02rem;color:var(--cream);background:var(--deep);
+  border:2.5px solid var(--ink);border-radius:14px;
+  padding:14px 26px;cursor:pointer;box-shadow:var(--shadow-hard);
+  transition:transform .12s,box-shadow .12s;-webkit-tap-highlight-color:transparent;
+}
+.brick-btn:hover:not(:disabled){transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--ink)}
+.brick-btn:active:not(:disabled){transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.brick-btn:disabled{opacity:.4;cursor:not-allowed}
+.brick-btn:focus-visible{outline:3px dashed var(--olive);outline-offset:3px}
+
+/* ============ 진행률 ============ */
+.progress{margin-bottom:12px;width:100%;max-width:480px}
+.stud-track{display:flex;justify-content:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+.stud{
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(255,255,255,.65);border:2.5px solid var(--ink);
+  position:relative;transition:background .3s,transform .3s;
+}
+.stud::after{content:"";position:absolute;inset:4px;border-radius:50%;border:2px solid rgba(20,24,12,.18)}
+.stud.filled{background:var(--olive);transform:scale(1.05)}
+.stud.current{background:var(--lime);animation:studPulse 1.2s infinite}
+@keyframes studPulse{0%,100%{transform:scale(1.05)}50%{transform:scale(1.18)}}
+.progress-label{font-size:.85rem;font-weight:700;opacity:.8;text-align:center;display:block}
+
+/* ============ 매장 사진 + 대화창 카드 (인트로~결과 공통, 오버레이 없음) ============ */
+.game-card{
+  position:relative;border:4px solid var(--ink);border-radius:20px;
+  box-shadow:6px 6px 0 var(--ink);overflow:hidden;
+}
+.photo-img-wrap{
+  width:100%;height:300px;overflow:hidden;
+}
+.photo-img{display:block;width:100%;height:100%;object-fit:cover;object-position:center 30%}
+.game-card.result-mode .photo-img-wrap{display:none}
+.game-card.result-mode .dialog-box{border-top:none}
+.dialog-box{
+  position:relative;background:#fff;border-top:4px solid var(--ink);
+  padding:22px 18px 18px;text-align:left;
+}
+#panel-content{animation:panelIn .3s ease both}
+@keyframes panelIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.q-text{font-size:1.05rem;font-weight:900;line-height:1.55;word-break:keep-all}
+.q-hint{font-size:.85rem;color:var(--olive);font-weight:700;margin-top:6px}
+.q-hint:empty{display:none}
+
+.options{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.option{
+  font-family:var(--font-body);text-align:left;font-size:.95rem;font-weight:500;
+  background:var(--cream);border:2.5px solid var(--ink);border-radius:12px;
+  padding:13px 16px;cursor:pointer;line-height:1.4;
+  transition:transform .1s,background .15s;box-shadow:3px 3px 0 rgba(20,24,12,.25);
+  word-break:keep-all;
+}
+.option:hover{transform:translate(-1px,-1px);background:#F4FFE0}
+.option.selected{background:var(--lime);font-weight:900;box-shadow:3px 3px 0 var(--ink)}
+.option.selected::before{content:"✓ ";font-weight:900}
+.option:focus-visible{outline:3px dashed var(--olive);outline-offset:2px}
+
+.nav-btns{display:flex;justify-content:space-between;gap:12px;margin-top:20px}
+.btn-ghost{background:transparent;color:var(--deep);box-shadow:none;border-color:transparent}
+.btn-ghost:hover:not(:disabled){box-shadow:none;transform:none;text-decoration:underline}
+.btn-ghost:disabled{opacity:.3}
+.btn-next{background:var(--olive);flex:1;max-width:220px;margin-left:auto}
+
+/* ============ 결과 패널 ============ */
+.result-hero{text-align:center;padding-bottom:6px}
+.result-eyebrow{font-size:.85rem;opacity:.75;font-weight:700}
+.result-emoji{font-size:2.8rem;margin:8px 0 2px}
+.result-type{font-family:var(--font-display);font-weight:400;font-size:1.5rem;line-height:1.5;color:var(--deep);letter-spacing:.5px}
+.base-type-badge{
+  display:inline-block;background:var(--mint);color:var(--deep);
+  font-size:.76rem;font-weight:700;padding:4px 12px;border-radius:12px;
+  border:1.5px solid var(--ink);margin-top:6px;
+}
+.result-tag{font-size:.92rem;margin-top:8px;opacity:.85}
+.result-sensitive{
+  margin-top:12px;font-size:.83rem;background:rgba(255,155,200,.25);
+  border-radius:10px;padding:8px 12px;display:inline-block;
+}
+
+.result-card{
+  background:var(--cream);border:2.5px solid var(--ink);border-radius:var(--radius);
+  box-shadow:3px 3px 0 rgba(20,24,12,.5);padding:18px;margin-top:14px;text-align:left;
+}
+.result-card.highlight{background:#FFFBE6;border-color:var(--olive);border-width:3px}
+.rc-title{font-size:.98rem;font-weight:900;display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rc-stud{width:13px;height:13px;border-radius:50%;background:var(--olive);border:2px solid var(--ink);display:inline-block;flex:none}
+.result-card p{font-size:.92rem;line-height:1.6;word-break:keep-all}
+
+.concern-chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{background:var(--mint);border:2px solid var(--ink);border-radius:20px;padding:5px 13px;font-size:.84rem;font-weight:700}
+.chip.primary{background:var(--lime)}
+
+.product{background:#fff;border:2px solid var(--ink);border-radius:12px;padding:14px;margin-bottom:0}
+.product-step{font-size:.73rem;font-weight:900;color:var(--olive);letter-spacing:.5px}
+.product-name{font-size:.98rem;font-weight:900;margin:2px 0 4px}
+.product-price{font-size:.8rem;opacity:.7;font-weight:700}
+.product-why{font-size:.85rem;line-height:1.55;margin-top:6px;word-break:keep-all}
+.step-note{
+  font-size:.78rem;font-weight:700;color:var(--olive);background:rgba(124,168,44,.12);
+  border-radius:8px;padding:8px 10px;margin-bottom:14px;word-break:keep-all;
+}
+.step-note:empty{display:none}
+
+/* 제품 순서 타임라인: 번호가 매겨진 원 + 연결선으로 "순서대로 바르는 흐름"을 시각화 */
+.product-timeline{
+  list-style:none;counter-reset:pstep;
+  position:relative;padding-left:30px;margin:0;
+}
+.product-timeline::before{
+  content:"";position:absolute;left:12px;top:14px;bottom:14px;
+  width:3px;background:repeating-linear-gradient(180deg,var(--olive) 0 6px,transparent 6px 11px);
+}
+.product-timeline li{position:relative;margin-bottom:14px}
+.product-timeline li:last-child{margin-bottom:0}
+.product-timeline li::before{
+  counter-increment:pstep;content:counter(pstep);
+  position:absolute;left:-30px;top:14px;
+  width:26px;height:26px;border-radius:50%;background:var(--olive);color:#fff;
+  border:2.5px solid var(--ink);font-weight:900;font-size:.85rem;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+}
+
+.allinone-tip{
+  margin-top:14px;background:var(--mint);border:2px dashed var(--deep);border-radius:12px;padding:12px 14px;
+}
+.allinone-tip-title{font-size:.78rem;font-weight:900;color:var(--deep);margin-bottom:4px}
+.allinone-tip .product-name{font-size:.92rem}
+
+.care-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.care-tag{font-size:.7rem;font-weight:900;color:#fff;background:var(--olive);border-radius:8px;padding:2px 9px}
+.care-tag-general{background:#9aa08a}
+.price-note{font-size:.74rem;opacity:.6;margin-top:14px}
+
+.routine{list-style:none;counter-reset:step}
+.routine li{counter-increment:step;position:relative;padding:8px 0 8px 40px;font-size:.9rem;line-height:1.5;word-break:keep-all}
+.routine li::before{
+  content:counter(step);position:absolute;left:0;top:6px;
+  width:26px;height:26px;border-radius:8px;background:var(--yellow);
+  border:2px solid var(--ink);font-weight:900;font-size:.85rem;
+  display:flex;align-items:center;justify-content:center;
+}
+.routine li .step-tag{
+  font-size:.7rem;font-weight:900;color:#fff;background:var(--olive);
+  border-radius:8px;padding:1px 8px;margin-left:6px;white-space:nowrap;
+}
+.routine-tip{
+  margin-top:10px;padding-top:10px;border-top:1.5px dashed rgba(20,24,12,.25);
+  font-size:.8rem;font-weight:700;color:var(--olive);word-break:keep-all;
+}
+.routine-tip:empty{display:none}
+
+.extra-product{
+  display:flex;align-items:flex-start;gap:8px;background:#fff;
+  border:2px solid var(--ink);border-radius:12px;padding:12px;margin-bottom:8px;
+}
+.extra-product:last-child{margin-bottom:0}
+.extra-product .ep-tag{
+  flex:none;font-size:.7rem;font-weight:900;color:#fff;background:var(--olive);
+  border-radius:8px;padding:3px 8px;white-space:nowrap;margin-top:2px;
+}
+.extra-product .ep-body{flex:1}
+.extra-product .ep-name{font-weight:900;font-size:.9rem}
+.extra-product .ep-price{font-size:.76rem;opacity:.7;font-weight:700}
+.extra-product .ep-why{font-size:.82rem;line-height:1.5;margin-top:3px;word-break:keep-all}
+
+.result-actions{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.btn-share{background:var(--sky);color:var(--ink)}
+.disclaimer{font-size:.73rem;opacity:.6;margin-top:14px;text-align:center}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translate(-50%,80px);
+  background:var(--ink);color:#fff;font-weight:700;font-size:.9rem;
+  padding:12px 22px;border-radius:24px;opacity:0;transition:.35s;z-index:99;
+  pointer-events:none;
+}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+@media (min-width:640px){
+  .app-wrap{padding:40px 20px}
+  .dialog-box{padding:26px 24px 20px}
+}
