@@ -133,6 +133,21 @@ body::before{
 .rc-title{font-size:.98rem;font-weight:900;display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .rc-stud{width:13px;height:13px;border-radius:50%;background:var(--olive);border:2px solid var(--ink);display:inline-block;flex:none}
 .result-card p{font-size:.92rem;line-height:1.6;word-break:keep-all}
+.care-tip-block{
+  margin-top:12px;padding:12px;background:var(--mint);border-radius:10px;
+  font-size:.87rem;line-height:1.6;word-break:keep-all;
+}
+.habit-tip-block{
+  margin-top:12px;padding:12px;background:var(--cream);border:1.5px dashed var(--olive);border-radius:10px;
+  font-size:.87rem;line-height:1.6;word-break:keep-all;
+}
+.other-concerns-block{margin-top:12px;padding:12px;background:#fff;border:1.5px solid var(--ink);border-radius:10px}
+.other-concerns-title{font-size:.82rem;font-weight:900;margin-bottom:6px}
+.other-concern-line{font-size:.82rem;line-height:1.6;word-break:keep-all;margin-top:4px}
+.usage-tip{
+  margin-top:8px;padding-top:8px;border-top:1.5px dashed rgba(20,24,12,.25);
+  font-size:.78rem;line-height:1.5;color:var(--olive);font-weight:700;word-break:keep-all;
+}
 
 .concern-chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{background:var(--mint);border:2px solid var(--ink);border-radius:20px;padding:5px 13px;font-size:.84rem;font-weight:700}

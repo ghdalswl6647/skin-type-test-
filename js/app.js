@@ -23,6 +23,16 @@
   let forcedType = null;
   let forcedSensitive = null;
 
+  // srcdoc 미리보기 등 일부 샌드박스 환경에서는 history API가 막혀있을 수 있어
+  // 에러 없이 조용히 넘어가도록 감싸줌 (실제 배포 사이트에서는 정상 동작)
+  function safeReplaceState(url) {
+    try {
+      history.replaceState(null, "", url);
+    } catch (e) {
+      /* 미리보기 샌드박스 등에서는 무시 */
+    }
+  }
+
   buildStuds();
 
   function buildStuds() {
@@ -72,6 +82,15 @@
   function renderQuestion(idx) {
     const q = QUESTIONS[idx];
     let opts = q.options;
+    if (q.id === "q5" && answers.q2 && answers.q3 && answers.q4) {
+      // Q2~4가 이미 답변된 시점이면 예비 진단을 돌려서, 논리적으로 모순되는
+      // 선택지(예: 건성인데 "번들거림")를 미리 숨긴다. (민감도 전환과 무관하게
+      // baseType으로 판단 — 민감성으로 바뀌어도 원래 유분 성질은 유지되므로)
+      const { baseType } = calculateSkinType(answers);
+      if (baseType === "dry") {
+        opts = opts.filter((o) => o.value !== "sebum");
+      }
+    }
     if (q.dynamic === "fromQ5") {
       const picked = answers.q5 || [];
       opts = picked.map((v) => ({ label: CONCERN_LABELS[v], value: v }));
@@ -138,14 +157,10 @@
     const budget = rawBudget === "budget_any" ? "budget_mid" : rawBudget;
     const gender = answers.q1;
 
-    // 모공이 1순위(가장 급한 고민)면 더 집중적인 앰플로, 부수적인 고민이면 세럼(디오디너리)으로
-    const poreIsPrimary = primary === "pore";
-    let categories = wantsAllinoneOnly
-      ? ["allinone", "suncream"]
-      : buildRecommendedCategories(concerns);
-    if (!wantsAllinoneOnly && poreIsPrimary && !categories.includes("ampoule")) {
-      categories = CATEGORY_ORDER.filter((c) => categories.includes(c) || c === "ampoule");
-    }
+    // 카테고리 자동 구성: 1순위 고민은 앰플로, 나머지 강도조절 대상 고민은 세럼으로 포함
+    const categories = wantsAllinoneOnly
+      ? ["allinone", "ampoule", "suncream"] // 올인원(기초) + 1순위 고민 앰플(부스터) + 선크림
+      : buildRecommendedCategories(concerns, primary);
     lastResult = { typeId, sensitiveNote, concerns, primary, budget: rawBudget, categories };
 
     const r = RESULTS[typeId];
@@ -157,39 +172,71 @@
       })
       .join("");
 
-    // 모공: 1순위(가장 급함)면 집중 앰플, 부수 고민이면 세럼(디오디너리)으로 분기
-    const PORE_SERUM_OVERRIDE = {
-      name: "디오디너리 나이아신아마이드 10% + 징크 1%",
-      price: "15,700원",
-      why: "모공과 피지 분비를 동시에 관리하는 대표 세럼이에요. 꾸준히 바르면 모공이 눈에 띄게 정돈돼요.",
-    };
-    const PORE_AMPOULE_OVERRIDE = {
-      name: "성분에디터 그린토마토 NMN 포어 리프팅 앰플",
-      price: "약 2만원대",
-      why: "모공이 가장 급한 고민이라면 이 정도는 집중적으로! 그린토마토 성분이 늘어진 모공을 고농축으로 타이트닝해줘요.",
-    };
-    const usePoreSerumOverride = concerns.includes("pore") && !poreIsPrimary;
-    const usePoreAmpouleOverride = poreIsPrimary;
+    // 1순위 고민에 맞춰 "피부 특징" 칸에 타입별 관리법 추가 (제품 구성은 5종 고정)
+    const CARE_TIP_SETS = { trouble: TROUBLE_CARE_TIPS, pore: PORE_CARE_TIPS, sebum: SEBUM_CARE_TIPS, flaky: FLAKY_CARE_TIPS };
+    const tipSet = CARE_TIP_SETS[primary];
+    const careTipText = tipSet ? tipSet[typeId] || tipSet.neutral : "";
+    const careTipHtml = careTipText
+      ? `<p class="care-tip-block">💡 <strong>${CONCERN_LABELS[primary]} 관리법</strong> — ${careTipText}</p>`
+      : "";
+
+    // 트러블·모공 1순위 전용 앰플 (피부타입별로 실제 지정된 제품)
+    const DEDICATED_AMPOULE = { trouble: TROUBLE_AMPOULE, pore: PORE_AMPOULE };
+
+    // 부수 고민(2·3순위)도 짧게라도 언급 — product형(트러블·모공)은 전용 제품을 한 줄로,
+    // habit형(번들거림·각질)은 관리법 텍스트를 재사용
+    const otherConcerns = concerns.filter((c) => c !== primary);
+    const otherConcernsHtml = otherConcerns.length
+      ? `<div class="other-concerns-block">
+          <p class="other-concerns-title">📌 그 외에 고르신 고민도 챙겨드려요</p>
+          ${otherConcerns
+            .map((c) => {
+              const isProductType = INTENSITY_CONCERNS.includes(c);
+              const dedicated = isProductType && DEDICATED_AMPOULE[c] ? DEDICATED_AMPOULE[c][typeId] : null;
+              const line = dedicated
+                ? `${dedicated.name} (${dedicated.price}) — ${dedicated.why}`
+                : (CARE_TIP_SETS[c] && (CARE_TIP_SETS[c][typeId] || CARE_TIP_SETS[c].neutral)) || "";
+              return `<p class="other-concern-line">· <strong>${CONCERN_LABELS[c]}</strong> — ${line}</p>`;
+            })
+            .join("")}
+        </div>`
+      : "";
+
+    // 1순위가 트러블·모공이면 앰플 자리를 전용 제품으로 완전히 교체 (타입 기본 앰플 대신)
+    const primaryDedicatedAmpoule = DEDICATED_AMPOULE[primary] ? DEDICATED_AMPOULE[primary][typeId] : null;
+    const showAmpouleUsage = !!primaryDedicatedAmpoule;
+    const ampoultUsageTip = primaryDedicatedAmpoule && primaryDedicatedAmpoule.usageTip
+      ? `<p class="usage-tip">💡 사용 TIP — ${primaryDedicatedAmpoule.usageTip}</p>`
+      : "";
+
+    // 민감도가 "가끔"(sens1) 수준이면 타입은 유지하되, 카테고리별로 저자극 버전으로 교체
+    // 단, 1순위 고민(트러블·모공)이 배정한 앰플 자리는 예외 — "제일 급한 고민은 확실히,
+    // 나머지는 순하게"라는 원칙으로, 앰플만 민감보정 적용에서 제외
+    const useSensitiveAlt = sensitiveNote && typeId !== "sensitive";
+    const ampouleExemptFromSensitiveAlt = INTENSITY_CONCERNS.includes(primary);
 
     const cats = CATEGORY_ORDER.filter((c) => categories.includes(c) && r.products[c]);
     const productsHtml = cats
       .map((cat, i) => {
+        const skipSensitiveAlt = cat === "ampoule" && ampouleExemptFromSensitiveAlt;
         const p =
-          cat === "serum" && usePoreSerumOverride
-            ? PORE_SERUM_OVERRIDE
-            : cat === "ampoule" && usePoreAmpouleOverride
-            ? PORE_AMPOULE_OVERRIDE
+          cat === "ampoule" && primaryDedicatedAmpoule
+            ? primaryDedicatedAmpoule
+            : useSensitiveAlt && !skipSensitiveAlt && SENSITIVE_ALT[cat] && SENSITIVE_ALT[cat][budget]
+            ? SENSITIVE_ALT[cat][budget]
             : (r.products[cat] && r.products[cat][budget]) || r.products[cat].budget_mid;
-        const matched = concerns.filter((c) => (CATEGORY_CONCERN_MAP[cat] || []).includes(c));
+        const matched = concerns.filter((c) => (p.covers || []).includes(c));
         const careTagsHtml = matched.length
           ? `<div class="care-tags">${matched.map((c) => `<span class="care-tag">${CONCERN_LABELS[c] || c} 케어</span>`).join("")}</div>`
           : `<div class="care-tags"><span class="care-tag care-tag-general">데일리 컨디션 케어</span></div>`;
+        const usageHtml = cat === "ampoule" && showAmpouleUsage ? ampoultUsageTip : "";
         return `<li class="product">
           <p class="product-step">${CATEGORY_LABELS[cat]}</p>
           <p class="product-name">${p.name}</p>
           <p class="product-price">${p.price}</p>
           <p class="product-why">${p.why}</p>
           ${careTagsHtml}
+          ${usageHtml}
         </li>`;
       })
       .join("");
@@ -233,7 +280,9 @@
 
       <div class="result-card">
         <h3 class="rc-title"><span class="rc-stud"></span>피부 특징</h3>
-        <p>${r.desc}</p>
+        ${r.habitTip ? `<p class="habit-tip-block">🧴 <strong>평소 관리 습관</strong> — ${r.habitTip}</p>` : ""}
+        ${careTipHtml}
+        ${otherConcernsHtml}
       </div>
 
       <div class="result-card">
@@ -246,7 +295,7 @@
         <p class="step-note">${orderNote}</p>
         <ol class="product-timeline">${productsHtml}</ol>
         ${allinoneHtml}
-        <p class="price-note">* 가격은 대략적인 정가 기준이며 매장·기획전에 따라 달라질 수 있어요</p>
+        <p class="price-note">* 가격은 대략적인 정가 기준이에요. 온라인·매장 가격이 다르거나 기획전으로 달라질 수 있으니 구매 전 앱에서 확인해주세요!</p>
       </div>
 
       <div class="result-card">
@@ -273,7 +322,7 @@
     el.btnNext.disabled = false;
     el.btnNext.textContent = "처음부터 다시 진단하기";
 
-    history.replaceState(null, "", buildShareUrl());
+    safeReplaceState(buildShareUrl());
   }
 
   function render() {
@@ -311,7 +360,7 @@
     lastResult = null;
     forcedType = null;
     forcedSensitive = null;
-    history.replaceState(null, "", location.pathname);
+    safeReplaceState(location.pathname);
     render();
   }
 

@@ -14,7 +14,7 @@ const QUESTIONS = [
   },
   {
     id: "q2",
-    text: "고객님, 세수하고 아무것도 안 발랐을 때 피부가 어떠세요?",
+    text: "세수하고 아무것도 안 발랐을 때 피부가 어떠세요?",
     hint: "",
     multi: false,
     options: [
@@ -39,7 +39,7 @@ const QUESTIONS = [
   },
   {
     id: "q4",
-    text: "고객님 피부, 자극에 예민하게 반응한 적 있으세요? (따가움·붉어짐·가려움 같은 거요!)",
+    text: "피부가 자극에 예민하게 반응한 적 있으세요? (따가움, 붉어짐, 트러블 같은 것들이요)",
     hint: "",
     multi: false,
     options: [
@@ -50,38 +50,35 @@ const QUESTIONS = [
   },
   {
     id: "q5",
-    text: "요즘 여름 피부 고민, 있는 대로 다 골라주세요! 하나도 빠짐없이 챙겨드릴게요!",
+    text: "요즘 겪고 있는 여름 피부 고민을 모두 골라주세요",
     hint: "복수 선택 가능해요",
     multi: true,
     options: [
       { label: "트러블·여드름", value: "trouble" },
       { label: "과도한 번들거림", value: "sebum" },
-      { label: "겉은 번들, 속은 당김 (속건조)", value: "innerdry" },
       { label: "모공", value: "pore" },
-      { label: "자외선·색소침착", value: "uv" },
       { label: "푸석함·각질", value: "flaky" },
     ],
   },
   {
     id: "q6",
-    text: "고객님, 그중에 제일 급한 고민부터 잡아드릴게요! 뭐가 제일 시급하세요?",
-    hint: "걱정 마세요, 나머지 고민도 결과에 싹 담아드립니다",
+    text: "그중 가장 급한 고민은 무엇인가요?",
+    hint: "나머지 고민도 결과에 함께 담아드릴게요",
     multi: false,
     dynamic: "fromQ5",
     options: [],
   },
   {
     id: "q7",
-    text: "마지막이에요! 기초템 하나에 어느 정도까지 생각하세요?",
+    text: "마지막 질문이에요. 기초템 하나에 어느 정도까지 생각하세요?",
     hint: "",
     multi: false,
     dynamic: "budgetPlusAllinone",
     baseOptions: [
-      { label: "1~3만원대 (실속 있게)", value: "budget_mid" },
-      { label: "3만원 이상 (피부에 아낌없이)", value: "budget_high" },
-      { label: "상관없어요 (좋은 걸로 추천해주세요)", value: "budget_any" },
+      { label: "1~3만원대", value: "budget_mid" },
+      { label: "3만원 이상", value: "budget_high" },
     ],
-    maleOnlyOption: { label: "올인원으로 추천해주세요 (간편하게 하나로 끝!)", value: "allinone_only" },
+    maleOnlyOption: { label: "올인원으로 추천해주세요 (간편하게 하나로 끝)", value: "allinone_only" },
   },
 ];
 
@@ -104,38 +101,60 @@ const CATEGORY_LABELS = {
   suncream: "선크림",
   allinone: "올인원",
 };
-const CATEGORY_ORDER = ["toner", "serum", "ampoule", "cream", "allinone", "suncream"];
+const CATEGORY_ORDER = ["toner", "serum", "allinone", "ampoule", "cream", "suncream"];
 
 // 항상 포함되는 기본 루틴 (세안 후 정돈 + 마무리 보습 + 자외선차단)
-const BASE_CATEGORIES = ["toner", "cream", "suncream"];
+const BASE_CATEGORIES = ["toner", "serum", "ampoule", "cream", "suncream"];
 
-// 고민별 가장 효과적인 제품군 (사용자가 직접 고르지 않고 알고리즘이 자동 판단)
-const CONCERN_TO_BEST_CATEGORY = {
-  trouble: "ampoule",   // 트러블엔 고농축 진정 앰플이 가장 직접적
-  sebum: "toner",       // 번들거림은 피지 밸런싱 토너로 기본 관리 (이미 기본 포함)
-  innerdry: "serum",    // 속건조는 세럼으로 속수분 집중 보충
-  pore: "serum",        // 모공은 타겟 세럼(나이아신아마이드 등)이 효과적
-  uv: "suncream",       // 자외선은 선크림이 필수 (이미 기본 포함)
-  flaky: "cream",       // 푸석함·각질은 크림 보습이 핵심 (이미 기본 포함)
+// 강도 조절이 필요한 4개 고민: 1순위면 앰플(집중), 부수 고민이면 세럼(꾸준 관리)
+const INTENSITY_CONCERNS = ["trouble", "pore"];
+
+// 4개 고민이 1순위일 때: "피부 특징" 칸에 타입별 관리법 설명 (제품 구성은 항상 5종 고정)
+const TROUBLE_CARE_TIPS = {
+  dry: "건성인데 트러블이 나면 피부 장벽이 약해져 있는 경우가 많아요. 보습·진정을 챙기면서 위에서 추천한 앰플로 트러블 부위만 집중 케어해보세요.",
+  oily: "지성 피부는 과다 피지가 트러블의 주 원인이에요. 위에서 추천한 앰플로 피지 밸런스를 잡아주면서 세안을 놓치지 않는 게 중요해요.",
+  combo: "복합성은 T존 위주로 트러블이 나기 쉬워요. 전체가 아니라 트러블 난 부위 위주로 위 앰플을 발라 국소적으로 케어해보세요.",
+  subji: "수부지는 속건조로 인한 피지 과다 분비가 트러블로 이어지기 쉬워요. 속수분을 채우면서 위 앰플로 트러블 부위를 진정시켜주세요.",
+  sensitive: "민감성 피부의 트러블은 자극에 대한 반응인 경우가 많아요. 새 제품을 한꺼번에 바꾸지 말고, 위 앰플처럼 진정 성분 위주로 최소한만 발라주세요.",
+  neutral: "평소엔 트러블이 적은 편인데 요즘 났다면 컨디션 저하나 자극 때문인 경우가 많아요. 위 앰플로 해당 부위만 가볍게 케어하고 며칠 지켜봐주세요.",
+};
+const PORE_CARE_TIPS = {
+  dry: "건성 피부의 모공은 탄력 저하로 늘어져 보이는 경우가 많아요. 보습과 함께 위에서 추천한 앰플로 꾸준히 탄력 케어를 해주시면 도움이 돼요.",
+  oily: "지성 피부의 모공은 과다 피지로 넓어지기 쉬워요. 위 앰플로 피지·모공 케어를 함께 하시고 이중세안을 놓치지 마세요.",
+  combo: "복합성은 T존 모공이 특히 신경 쓰이실 텐데, 위 앰플을 T존 위주로 발라주시면 효과적이에요.",
+  subji: "수부지는 속건조로 인한 유분 과다가 모공 확장으로 이어질 수 있어요. 속수분을 채우면서 위 앰플로 모공을 함께 관리해주세요.",
+  sensitive: "민감성 피부는 자극이 모공을 더 도드라져 보이게 할 수 있어요. 위 앰플처럼 순한 성분으로 자극 없이 꾸준히 관리하는 게 중요해요.",
+  neutral: "지금 좋은 밸런스를 유지하면서 위 앰플로 모공 관리까지 더하면 앞으로도 좋은 피부를 유지하실 수 있어요.",
+};
+const SEBUM_CARE_TIPS = {
+  dry: "건성인데도 번들거림이 고민이시라면, 보통 T존 등 특정 부위에만 유분이 몰리는 경우가 많아요. 전체적으로는 보습을 유지하면서 번들거리는 부위만 가볍게 눌러 정리해주세요. 피지 조절 제품을 얼굴 전체에 쓰면 오히려 건조한 부위가 더 당길 수 있어요.",
+  oily: "지성 피부의 번들거림은 과도한 피지 분비가 원인이에요. 하루 2번 세안은 지키되 과도한 세안은 피하고, 가벼운 수분 제품으로 피지·수분 밸런스를 맞춰주는 게 핵심이에요.",
+  combo: "복합성은 T존만 유독 번들거리는 경우가 많아요. T존은 가볍게, 볼은 조금 더 촉촉하게 — 부위별로 다르게 관리해주시면 훨씬 효과적이에요.",
+  subji: "수부지는 겉은 번들거려도 속은 건조한 상태라, 유분만 잡으려 하면 오히려 피지가 더 늘어나는 악순환이 생겨요. 산뜻한 제형으로 속수분부터 채워주는 게 먼저예요.",
+  sensitive: "민감성 피부의 번들거림은 자극으로 인한 과다 피지 분비인 경우가 많아요. 피지 조절보다 진정 성분 위주로 자극을 줄이면 유분도 자연스럽게 안정돼요.",
+  neutral: "평소엔 번들거림이 적은 편인데 요즘 유독 그렇다면 냉방·자외선 같은 외부 요인 때문인 경우가 많아요. 가벼운 제형으로 바꿔보시고 컨디션 변화를 좀 더 지켜봐주세요.",
+};
+const FLAKY_CARE_TIPS = {
+  dry: "건성 피부의 각질·푸석함은 수분 부족이 근본 원인이에요. 각질 제거보다 보습을 충분히 채워주면 자연스럽게 결이 부드러워져요. 스크럽 등 물리적 각질 제거는 피하는 게 좋아요.",
+  oily: "지성인데 각질이 있다면 피지와 각질이 뒤엉켜 모공을 막을 수 있어요. PHA처럼 순한 각질케어 성분을 주 1~2회 정도로 가볍게 시작해보세요.",
+  combo: "복합성은 건조한 볼 쪽에 각질이 몰리는 경우가 많아요. 얼굴 전체 각질 제거보다 건조한 부위만 부분적으로 보습을 강화해주세요.",
+  subji: "수부지의 각질은 속건조가 원인인 경우가 많아요. 각질을 벗겨내기보다 속수분을 채우는 게 먼저예요.",
+  sensitive: "민감성 피부의 각질은 장벽 손상 신호인 경우가 많아요. 각질제거 성분은 피하고 진정·보습 위주로 장벽부터 회복시켜주세요.",
+  neutral: "에어컨·자외선 같은 계절 요인으로 일시적 각질이 생긴 경우가 많아요. 평소보다 보습을 한 단계만 더해주시면 금방 회복돼요.",
 };
 
 // 제품군이 커버하는 고민 목록 (결과지에서 "이 제품이 어떤 고민에 도움되는지" 표시용)
 const CATEGORY_CONCERN_MAP = {
   toner: ["innerdry", "sebum", "flaky"],
   serum: ["innerdry", "flaky", "uv", "trouble", "pore"],
-  ampoule: ["trouble", "pore", "innerdry"],
+  ampoule: ["trouble", "pore", "innerdry", "uv", "flaky"],
   cream: ["flaky", "innerdry"],
   suncream: ["uv"],
   allinone: [],
 };
 
-// 사용자가 고른 고민을 바탕으로 추천 제품군을 자동 구성
-// (남성은 간편 올인원을 별도 보너스 팁으로 추가)
-function buildRecommendedCategories(concerns) {
-  const set = new Set(BASE_CATEGORIES);
-  (concerns || []).forEach((c) => {
-    const cat = CONCERN_TO_BEST_CATEGORY[c];
-    if (cat) set.add(cat);
-  });
-  return CATEGORY_ORDER.filter((c) => set.has(c));
+// 기본 5종(토너·세럼·앰플·크림·선크림)은 고민과 무관하게 항상 고정 추천
+// 고민(concerns/primary)은 이제 제품 구성이 아니라 "피부 특징" 칸의 관리법 설명에 반영됨
+function buildRecommendedCategories(concerns, primary) {
+  return CATEGORY_ORDER.filter((c) => BASE_CATEGORIES.includes(c));
 }
