@@ -14,6 +14,8 @@
     btnNext: document.getElementById("btn-next"),
     toast: document.getElementById("toast"),
     gameCard: document.getElementById("game-card"),
+    storePhoto: document.getElementById("store-photo"),
+    glossaryPanel: document.getElementById("glossary-panel"),
   };
 
   const TOTAL_Q = QUESTIONS.length; // 7
@@ -255,18 +257,8 @@
         : `고객님 고민에 맞춰 가장 효과적인 걸로 골라봤어요! 위에서부터 순서대로 발라주세요.`
       : "";
 
-    // 남성이면 올인원 간편템도 별도로 살짝 제안 (단, 이미 올인원을 메인으로 골랐으면 중복이니 생략)
-    const allinoneP = gender === "male" && !wantsAllinoneOnly && r.products.allinone
-      ? (r.products.allinone[budget] || r.products.allinone.budget_mid)
-      : null;
-    const allinoneHtml = allinoneP
-      ? `<div class="allinone-tip">
-          <p class="allinone-tip-title">바쁜 날엔 이거 하나로 끝!</p>
-          <p class="product-name">${allinoneP.name}</p>
-          <p class="product-price">${allinoneP.price}</p>
-          <p class="product-why">${allinoneP.why}</p>
-        </div>`
-      : "";
+    // 올인원은 Q7에서 명시적으로 선택했을 때만 등장해야 함 → 별도 "보너스 제안" 카드 완전 삭제
+    const allinoneHtml = "";
 
     const tagMatch = (tag) =>
       (tag === "자외선" && concerns.includes("uv")) ||
@@ -374,6 +366,10 @@
   function render() {
     updateProgress();
     el.gameCard.classList.toggle("result-mode", step >= TOTAL_Q);
+    // Q7(예산, 마지막 질문)에서만 매장 사진 대신 기초템 용어 설명 그래픽 표시
+    const showGlossary = step === TOTAL_Q - 1;
+    el.storePhoto.hidden = showGlossary;
+    el.glossaryPanel.hidden = !showGlossary;
     if (step === -1) renderIntro();
     else if (step < TOTAL_Q) renderQuestion(step);
     else renderResultPanel();
