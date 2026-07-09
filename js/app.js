@@ -159,7 +159,9 @@
 
     // 카테고리 자동 구성: 1순위 고민은 앰플로, 나머지 강도조절 대상 고민은 세럼으로 포함
     const categories = wantsAllinoneOnly
-      ? ["allinone", "ampoule", "suncream"] // 올인원(기초) + 1순위 고민 앰플(부스터) + 선크림
+      ? INTENSITY_CONCERNS.includes(primary)
+        ? ["allinone", "ampoule", "suncream"] // 1순위가 제품형(트러블·모공)일 때만 앰플 부스터 추가
+        : ["allinone", "suncream"] // 1순위가 습관형(번들거림·각질)이면 앰플 억지로 안 붙임
       : buildRecommendedCategories(concerns, primary);
     lastResult = { typeId, sensitiveNote, concerns, primary, budget: rawBudget, categories };
 
@@ -205,7 +207,16 @@
       : "";
 
     // 1순위가 트러블·모공이면 앰플 자리를 전용 제품으로 완전히 교체 (타입 기본 앰플 대신)
-    const primaryDedicatedAmpoule = DEDICATED_AMPOULE[primary] ? DEDICATED_AMPOULE[primary][typeId] : null;
+    // 예외: 민감성은 자기 타입 앰플이 이미 트러블 전용(파티온/에스트라 세라-히알)이라
+    // 범용 트러블 앰플(닥터자르트) 대신 자기 타입 앰플을 그대로 사용
+    const OWN_TYPE_AMPOULE_EXCEPTION = { sensitive: ["trouble"] };
+    const useOwnAmpouleInstead =
+      OWN_TYPE_AMPOULE_EXCEPTION[typeId] && OWN_TYPE_AMPOULE_EXCEPTION[typeId].includes(primary);
+    const primaryDedicatedAmpoule = useOwnAmpouleInstead
+      ? null
+      : DEDICATED_AMPOULE[primary]
+      ? DEDICATED_AMPOULE[primary][typeId]
+      : null;
     const showAmpouleUsage = !!primaryDedicatedAmpoule;
     const ampoultUsageTip = primaryDedicatedAmpoule && primaryDedicatedAmpoule.usageTip
       ? `<p class="usage-tip">💡 사용 TIP — ${primaryDedicatedAmpoule.usageTip}</p>`
@@ -227,20 +238,12 @@
             : useSensitiveAlt && !skipSensitiveAlt && SENSITIVE_ALT[cat] && SENSITIVE_ALT[cat][budget]
             ? SENSITIVE_ALT[cat][budget]
             : (r.products[cat] && r.products[cat][budget]) || r.products[cat].budget_mid;
-        // 제품이 실제로 언급한 고민(covers) ∩ 이 카테고리가 원래 담당할 수 있는 고민(CATEGORY_CONCERN_MAP)
-        // 둘 다 만족해야만 태그 노출 — "선크림인데 번들거림 케어" 같은 근거 없는 태그 방지
-        const allowedForCat = CATEGORY_CONCERN_MAP[cat] || [];
-        const matched = concerns.filter((c) => (p.covers || []).includes(c) && allowedForCat.includes(c));
-        const careTagsHtml = matched.length
-          ? `<div class="care-tags">${matched.map((c) => `<span class="care-tag">${CONCERN_LABELS[c] || c} 케어</span>`).join("")}</div>`
-          : `<div class="care-tags"><span class="care-tag care-tag-general">데일리 컨디션 케어</span></div>`;
         const usageHtml = cat === "ampoule" && showAmpouleUsage ? ampoultUsageTip : "";
         return `<li class="product">
-          <p class="product-step">${CATEGORY_LABELS[cat]}</p>
+          <p class="product-step">${cat === "ampoule" && primary === "trouble" && primaryDedicatedAmpoule ? "스팟케어" : CATEGORY_LABELS[cat]}</p>
           <p class="product-name">${p.name}</p>
           <p class="product-price">${p.price}</p>
           <p class="product-why">${p.why}</p>
-          ${careTagsHtml}
           ${usageHtml}
         </li>`;
       })
@@ -276,6 +279,42 @@
     const routineHtml = (items) =>
       items.map((it) => `<li>${it.text}${it.tag && tagMatch(it.tag) ? `<span class="step-tag">${it.tag} 케어</span>` : ""}</li>`).join("");
 
+    // 올인원 선택 시: 토너·세럼·크림이 실제로 추천되지 않으므로 전용 루틴을 동적으로 구성
+    // (타입별 세안 문구만 기존 것을 재사용 — 세안은 올인원 여부와 무관해서 안전하게 재사용 가능)
+    let displayRoutineAM = r.routineAM;
+    let displayRoutinePM = r.routinePM;
+    if (wantsAllinoneOnly) {
+      const isProductType = INTENSITY_CONCERNS.includes(primary);
+      const conditionalStep = isProductType
+        ? {
+            text:
+              primary === "pore"
+                ? "위에서 추천한 앰플로 모공을 관리해주세요"
+                : primaryDedicatedAmpoule
+                ? "위에서 추천한 스팟케어 제품으로 트러블 부위를 관리해주세요"
+                : "위에서 추천한 앰플로 트러블 부위를 관리해주세요",
+            tag: "",
+          }
+        : { text: "위에서 알려드린 관리법대로 관리해주세요", tag: "" };
+      displayRoutineAM = [
+        r.routineAM[0],
+        { text: "위에서 추천한 올인원 제품을 발라주세요", tag: "" },
+        conditionalStep,
+        { text: "위에서 추천한 선크림으로 마무리해주세요", tag: "" },
+      ];
+      displayRoutinePM = [
+        r.routinePM[0],
+        { text: "위에서 추천한 올인원 제품을 발라주세요", tag: "" },
+        conditionalStep,
+      ];
+    }
+    const displayTipAM = wantsAllinoneOnly
+      ? "💡 아침 팁: 올인원 하나로 충분해요. 자외선 차단만은 놓치지 마세요!"
+      : r.tipAM;
+    const displayTipPM = wantsAllinoneOnly
+      ? "💡 저녁 팁: 하루 쌓인 피지·노폐물을 깨끗이 씻어내는 세안이 올인원 효과의 시작이에요."
+      : r.tipPM;
+
     el.panel.innerHTML = `
       <div class="result-hero">
         <p class="result-eyebrow">고객님의 여름 피부 타입은</p>
@@ -307,14 +346,14 @@
 
       <div class="result-card">
         <h3 class="rc-title"><span class="rc-stud"></span>아침 루틴</h3>
-        <ol class="routine">${routineHtml(r.routineAM)}</ol>
-        <p class="routine-tip">${r.tipAM || ""}</p>
+        <ol class="routine">${routineHtml(displayRoutineAM)}</ol>
+        <p class="routine-tip">${displayTipAM || ""}</p>
       </div>
 
       <div class="result-card">
         <h3 class="rc-title"><span class="rc-stud"></span>저녁 루틴</h3>
-        <ol class="routine">${routineHtml(r.routinePM)}</ol>
-        <p class="routine-tip">${r.tipPM || ""}</p>
+        <ol class="routine">${routineHtml(displayRoutinePM)}</ol>
+        <p class="routine-tip">${displayTipPM || ""}</p>
       </div>
 
       <div class="result-actions">
