@@ -168,7 +168,9 @@
     const chipsHtml = concerns
       .map((v) => {
         const isPrimary = v === primary;
-        return `<span class="chip${isPrimary ? " primary" : ""}">${CONCERN_LABELS[v] || v}${isPrimary ? " (1순위)" : ""}</span>`;
+        const isProduct = INTENSITY_CONCERNS.includes(v);
+        const howBadge = isProduct ? "제품 추천" : "관리법 안내";
+        return `<span class="chip${isPrimary ? " primary" : ""}">${CONCERN_LABELS[v] || v}${isPrimary ? " (1순위)" : ""}<span class="chip-how">${howBadge}</span></span>`;
       })
       .join("");
 
@@ -225,7 +227,10 @@
             : useSensitiveAlt && !skipSensitiveAlt && SENSITIVE_ALT[cat] && SENSITIVE_ALT[cat][budget]
             ? SENSITIVE_ALT[cat][budget]
             : (r.products[cat] && r.products[cat][budget]) || r.products[cat].budget_mid;
-        const matched = concerns.filter((c) => (p.covers || []).includes(c));
+        // 제품이 실제로 언급한 고민(covers) ∩ 이 카테고리가 원래 담당할 수 있는 고민(CATEGORY_CONCERN_MAP)
+        // 둘 다 만족해야만 태그 노출 — "선크림인데 번들거림 케어" 같은 근거 없는 태그 방지
+        const allowedForCat = CATEGORY_CONCERN_MAP[cat] || [];
+        const matched = concerns.filter((c) => (p.covers || []).includes(c) && allowedForCat.includes(c));
         const careTagsHtml = matched.length
           ? `<div class="care-tags">${matched.map((c) => `<span class="care-tag">${CONCERN_LABELS[c] || c} 케어</span>`).join("")}</div>`
           : `<div class="care-tags"><span class="care-tag care-tag-general">데일리 컨디션 케어</span></div>`;
@@ -240,8 +245,11 @@
         </li>`;
       })
       .join("");
+    const primaryIsHabitType = primary === "sebum" || primary === "flaky";
     const orderNote = cats.length
-      ? `고객님 고민에 맞춰 가장 효과적인 걸로 골라봤어요! 위에서부터 순서대로 발라주세요.`
+      ? primaryIsHabitType
+        ? `${CONCERN_LABELS[primary]}은 위 관리법이 핵심이에요. 아래는 피부 타입에 맞춘 데일리 기본 루틴이니, 위에서부터 순서대로 발라주세요.`
+        : `고객님 고민에 맞춰 가장 효과적인 걸로 골라봤어요! 위에서부터 순서대로 발라주세요.`
       : "";
 
     // 남성이면 올인원 간편템도 별도로 살짝 제안 (단, 이미 올인원을 메인으로 골랐으면 중복이니 생략)
@@ -279,7 +287,6 @@
       </div>
 
       <div class="result-card">
-        <h3 class="rc-title"><span class="rc-stud"></span>피부 특징</h3>
         ${r.habitTip ? `<p class="habit-tip-block">🧴 <strong>평소 관리 습관</strong> — ${r.habitTip}</p>` : ""}
         ${careTipHtml}
         ${otherConcernsHtml}
